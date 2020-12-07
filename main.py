@@ -438,7 +438,7 @@ class FourInARow:
                 if self.ended(j[0]):
                     scores2.append(-10000)
                     break
-                scores2.append(0.9 * self.evaluate_state(self.minimax_with_alfabeta_pruning(j[0], levels - 1, beta)[0]))
+                scores2.append(0.9 * self.evaluate_state(self.minimax_with_alfabeta_pruning(j[0], levels - 1, beta, player)[0]))
                 if beta > scores2[-1]:  # find better minimum
                     beta = scores2[-1]
                 if alfa > beta:  # there is no reason to continue on this branch
