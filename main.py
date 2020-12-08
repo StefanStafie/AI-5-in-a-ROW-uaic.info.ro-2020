@@ -115,7 +115,8 @@ class FourInARow:
         self.first_player = first_player
         self.is_swap2 = is_swap2
         self.player_names = player_names
-
+        if adversary_type != 0:
+            self.player_names[1] = "computer"
         self.init_table()
         self.init_graphics()
 
@@ -148,7 +149,77 @@ class FourInARow:
                     f"Player at turn: {self.player_names[self.player_to_put_piece]}")
                 self.next_click(first_player * -1)
             else:
-                self.next_click(-1)  # the game starts and the app awaits a click from player
+                if first_player == -1:  # human first
+                    self.swap_moves(first_player, 3)  # human make 3 moves
+                    keep_color = self.minimax_with_alfabeta_pruning(self.matrix, 2, 100000, 1)
+                    swap = self.minimax_with_alfabeta_pruning(self.matrix, 2, 100000, -1)
+                    if self.evaluate_state(keep_color[0]) > self.evaluate_state(swap[0]) * -1:
+                        print("keep")
+                        self.matrix[keep_color[2]][keep_color[1]] = 1
+                        self.window[str(keep_color[2] * self.x_cells + keep_color[1])].update(
+                            image_data=button_image(self.size, self.size, "black", False))
+                        self.next_click(-1)
+                    else:
+                        print("swap")
+                        self.next_click(1)
+                else:  # computer move
+                    self.update_matrix(-1, int(self.y_cells / 2 - 1) * self.x_cells + int(self.x_cells / 2))
+                    self.update_matrix(1, int(self.y_cells / 2 - 1) * self.x_cells + int(self.x_cells / 2) + 1)
+                    self.update_matrix(-1, int(self.y_cells / 2 - 1) * self.x_cells + int(self.x_cells / 2) + 2)
+                    self.window.read(timeout=1)
+                    print("a mers")
+                    if first_player == 1:
+                        colors = ["white", "black"]
+                    else:
+                        colors = ["black", "white"]
+                    self.window[str(int(self.y_cells / 2 - 1) * self.x_cells + int(self.x_cells / 2))].update(
+                        image_data=button_image(self.size, self.size, colors[0], False))
+                    self.window[str(int(self.y_cells / 2 - 1) * self.x_cells + int(self.x_cells / 2) + 1)].update(
+                        image_data=button_image(self.size, self.size, colors[1], False))
+                    self.window[str(int(self.y_cells / 2 - 1) * self.x_cells + int(self.x_cells / 2) + 2)].update(
+                        image_data=button_image(self.size, self.size, colors[0], False))
+                    # human move
+                    event, values = sg.Window('Select your \"GAME\"',
+                                              [[sg.Radio('keep color', "RADIO1", default=True, size=(10, 1))],
+                                               [sg.Radio('swap', "RADIO1")],
+                                               [sg.Radio('add 2 more stones and let opponent decide', "RADIO1")],
+                                               [sg.OK()]], margins=(40, 25)).read(close=True)
+                    if values[1]:
+                        computer_move, computer_x, computer_y = self.minimax_with_alfabeta_pruning(self.matrix, 2,
+                                                                                                   100000, -1)
+                        self.matrix[computer_y][computer_x] = 1
+                        print(self.matrix)
+                        self.window[str(computer_y * self.x_cells + computer_x)].update(
+                            image_data=button_image(self.size, self.size, "black", False))
+
+                        self.player_to_put_piece = (self.player_to_put_piece + 1) % 2
+                        self.window['the_current_player'].update(
+                            f"Player at turn: {self.player_names[self.player_to_put_piece]}")
+                        self.next_click(-1)
+
+                    if values[2]:
+                        self.player_to_put_piece = (self.player_to_put_piece + 1) % 2
+                        self.window['the_current_player'].update(
+                            f"Player at turn: {self.player_names[self.player_to_put_piece]}")
+                        self.swap_moves(first_player, 2)
+                        self.player_to_put_piece = (self.player_to_put_piece + 1) % 2
+
+                        keep_color = self.minimax_with_alfabeta_pruning(self.matrix, 2, 100000, 1)
+                        swap = self.minimax_with_alfabeta_pruning(self.matrix, 2, 100000, -1)
+                        if self.evaluate_state(keep_color[0]) > -1 * self.evaluate_state(swap[0]):
+                            print("keep")
+                            self.matrix[keep_color[2]][keep_color[1]] = 1
+                            self.window[str(keep_color[2] * self.x_cells + keep_color[1])].update(
+                                image_data=button_image(self.size, self.size, "black", False))
+                            self.next_click(-1)
+                        else:
+                            print("swap")
+                            self.next_click(1)
+
+                    self.player_to_put_piece = (self.player_to_put_piece + 1) % 2
+                    self.window['the_current_player'].update(
+                        f"Player at turn: {self.player_names[self.player_to_put_piece]}")
+                    self.next_click(first_player)
         else:
             self.next_click(-1)
 
@@ -276,10 +347,10 @@ class FourInARow:
             self.update_button(player, self.window[event])
             self.update_matrix(player, event)
             self.window.refresh()
+            self.player_to_put_piece = (self.player_to_put_piece + 1) % 2
+            self.window['the_current_player'].update(
+                f"Player at turn: {self.player_names[self.player_to_put_piece]}")
             if self.adversary_type == 0:  # for human
-                self.player_to_put_piece = (self.player_to_put_piece + 1) % 2
-                self.window['the_current_player'].update(
-                    f"Player at turn: {self.player_names[self.player_to_put_piece]}")
                 self.next_click(player * -1)
 
             else:  # for machine
@@ -289,16 +360,24 @@ class FourInARow:
                     a, b, c, d, e, f = self.get_game_info()
                     self.new_game(a, b, c, d, e, f)
                 # computer moves
+                self.player_to_put_piece = (self.player_to_put_piece + 1) % 2
+                self.window['the_current_player'].update(
+                    f"Player at turn: {self.player_names[self.player_to_put_piece]}")
                 self.window['the_current_player'].update("Player at turn: computer")
-                dummy, computer_x, computer_y = self.minimax_with_alfabeta_pruning(self.matrix, 2, 1000000, player)
-                self.matrix[computer_y][computer_x] = 1
+                self.window.refresh()
+                dummy, computer_x, computer_y = self.minimax_with_alfabeta_pruning(self.matrix, 2, 1000000, player * -1)
+                self.matrix[computer_y][computer_x] = player * -1
+                if player == 1:
+                    color = "white"
+                else:
+                    color = "black"
                 self.window[str(computer_y * self.x_cells + computer_x)].update(
-                    image_data=button_image(self.size, self.size, "black", False))
+                    image_data=button_image(self.size, self.size, color, False))
 
                 # back to human
                 self.window['the_current_player'].update(
                     f"Player at turn: {self.player_names[self.player_to_put_piece]}")
-                self.next_click(-1)
+                self.next_click(player)
         else:
             self.next_click(player)
 
@@ -508,7 +587,7 @@ class FourInARow:
         :param evaluated_matrix: the current state of the table
         :param levels: the level count of the tree generated by minimax
         :param prev_beta: the beta for the previous level
-        :return: a matrix representing the table generated by the best move
+        :return: a matrix representing the table generated by the best move and the position of the move
         """
         if levels == 0:  # if the end was reached, return
             return evaluated_matrix, 0, 0
