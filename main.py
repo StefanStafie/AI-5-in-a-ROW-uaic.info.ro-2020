@@ -202,7 +202,7 @@ class FourInARow:
                     a, b, c, d = self.get_game_info()
                     self.new_game(a, b, c, d)
 
-                dummy, computer_x, computer_y = self.minimax_with_alfabeta_pruning(self.matrix, 2, 1000000)
+                dummy, computer_x, computer_y = self.minimax_with_alfabeta_pruning(self.matrix, 2, 1000000, player)
                 self.matrix[computer_y][computer_x] = 1
                 self.window[str(computer_y * self.x_cells + computer_x)].update(
                     image_data=button_image(self.size, self.size, "black", False))
