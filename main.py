@@ -45,6 +45,7 @@ class FourInARow:
         self.matrix = np.zeros((self.x_cells, self.y_cells))
         if self.adversary_type != 0 and self.first_player == 1:
             self.matrix[int(self.y_cells / 2) - 1][int(self.x_cells / 2)] = 1
+        return None
 
     def init_graphics(self):
         """
@@ -80,13 +81,12 @@ class FourInARow:
                                               image_data=button_image(self.size, self.size, 'gray'), border_width=0))
                 counter += 1
             init_layout.append(new_line)
-
         self.layout = init_layout
 
     def update_button(self, player, button):
         """
             changes the color of a single button
-            :param p layer - determines the color of the change
+            :param player - determines the color of the change
             :param button - the button that needs changing
         """
         if player == 1:
@@ -94,6 +94,7 @@ class FourInARow:
         else:
             color = "white"
         button.update(image_data=button_image(self.size, self.size, color, False))
+        return None
 
     def new_game(self, adversary_type=1, first_player=1, x_cells=19, y_cells=19, is_swap2=False,
                  player_names=["john", "Lennon"]):
@@ -104,6 +105,7 @@ class FourInARow:
               :param x_cells number of horizontal cells
               :param y_cells number of vertical cells
               :param is_swap2 determines the start sequence of the game
+              :param player_names a list with length 2 representing the names of the players
         """
         print(first_player)
         self.x_cells = x_cells
@@ -119,7 +121,7 @@ class FourInARow:
 
         self.window = sg.Window('4inaROW', self.layout, element_padding=((0, 0), (0, 0)), margins=(0, 0))
         if is_swap2:
-            if adversary_type == 0:
+            if adversary_type == 0:  # human 
                 self.swap_moves(first_player, 3)
                 event, values = sg.Window('Select your \"GAME\"',
                                           [[sg.Radio('keep color', "RADIO1", default=True, size=(10, 1))],
@@ -127,14 +129,19 @@ class FourInARow:
                                            [sg.Radio('add 2 more stones and let opponent decide', "RADIO1")],
                                            [sg.OK()]], margins=(40, 25)).read(close=True)
 
+                if values[1]:
+                    self.player_names = self.player_names[::-1]
                 if values[2]:
                     self.swap_moves(first_player, 2)
                     event, values = sg.Window('Select your \"GAME\"',
                                               [[sg.Radio('keep color', "RADIO1", default=True, size=(10, 1))],
                                                [sg.Radio('swap', "RADIO1")],
                                                [sg.OK()]], margins=(40, 25)).read(close=True)
-
-        self.next_click(-1)  # the game starts and the app awaits a click from player
+                    if values[1]:
+                        self.player_names = self.player_names[::-1]
+                self.next_click(first_player * -1)
+            else:
+                self.next_click(-1)  # the game starts and the app awaits a click from player
 
     def get_game_info(self):
         """
@@ -272,11 +279,16 @@ class FourInARow:
                     self.window.close()
                     a, b, c, d, e, f = self.get_game_info()
                     self.new_game(a, b, c, d, e, f)
-
+                # computer moves
+                self.window['the_current_player'].update("Player at turn: computer")
                 dummy, computer_x, computer_y = self.minimax_with_alfabeta_pruning(self.matrix, 2, 1000000, player)
                 self.matrix[computer_y][computer_x] = 1
                 self.window[str(computer_y * self.x_cells + computer_x)].update(
                     image_data=button_image(self.size, self.size, "black", False))
+
+                # back to human
+                self.window['the_current_player'].update(
+                    f"Player at turn: {self.player_names[self.player_to_put_piece]}")
                 self.next_click(-1)
         else:
             self.next_click(player)
