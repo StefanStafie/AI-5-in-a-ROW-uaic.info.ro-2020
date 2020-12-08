@@ -34,6 +34,9 @@ class FourInARow:
         self.adversary_type = 0
         self.window = sg.Window
         self.first_player = -1
+        self.is_swap2 = 0
+        self.player_to_put_piece = 0
+        self.player_names = []
 
     def init_table(self):
         """
@@ -57,6 +60,8 @@ class FourInARow:
         self.size = int(min((w / self.x_cells), (h / self.y_cells) * 0.75))
 
         counter = 0
+        init_layout.append(
+            [sg.Text(f"Player at turn: {self.player_names[self.player_to_put_piece]}", key='the_current_player')])
         for line in self.matrix:
             new_line = []
             for item in line:
@@ -81,7 +86,7 @@ class FourInARow:
     def update_button(self, player, button):
         """
             changes the color of a single button
-            :param player - determines the color of the change
+            :param p layer - determines the color of the change
             :param button - the button that needs changing
         """
         if player == 1:
@@ -90,23 +95,45 @@ class FourInARow:
             color = "white"
         button.update(image_data=button_image(self.size, self.size, color, False))
 
-    def new_game(self, adversary_type=1, first_player=1, x_cells=19, y_cells=19):
+    def new_game(self, adversary_type=1, first_player=1, x_cells=19, y_cells=19, is_swap2=False,
+                 player_names=["john", "Lennon"]):
         """
               initialises a new game with certain characteristics
               :param adversary_type  takes 4 values. 0 for human (PvP game), (1, 2, 3) for (easy, medium, hard) difficulty
               :param first_player  -1 if white plays first, 1 if black plays first. Computer is always black
               :param x_cells number of horizontal cells
               :param y_cells number of vertical cells
+              :param is_swap2 determines the start sequence of the game
         """
+        print(first_player)
         self.x_cells = x_cells
         self.y_cells = y_cells
         self.adversary_type = adversary_type
+        self.player_to_put_piece = 0 if first_player == -1 else 1
         self.first_player = first_player
+        self.is_swap2 = is_swap2
+        self.player_names = player_names
 
         self.init_table()
         self.init_graphics()
 
         self.window = sg.Window('4inaROW', self.layout, element_padding=((0, 0), (0, 0)), margins=(0, 0))
+        if is_swap2:
+            if adversary_type == 0:
+                self.swap_moves(first_player, 3)
+                event, values = sg.Window('Select your \"GAME\"',
+                                          [[sg.Radio('keep color', "RADIO1", default=True, size=(10, 1))],
+                                           [sg.Radio('swap', "RADIO1")],
+                                           [sg.Radio('add 2 more stones and let opponent decide', "RADIO1")],
+                                           [sg.OK()]], margins=(40, 25)).read(close=True)
+
+                if values[2]:
+                    self.swap_moves(first_player, 2)
+                    event, values = sg.Window('Select your \"GAME\"',
+                                              [[sg.Radio('keep color', "RADIO1", default=True, size=(10, 1))],
+                                               [sg.Radio('swap', "RADIO1")],
+                                               [sg.OK()]], margins=(40, 25)).read(close=True)
+
         self.next_click(-1)  # the game starts and the app awaits a click from player
 
     def get_game_info(self):
@@ -116,12 +143,17 @@ class FourInARow:
         :return: the information needed to start a new_game()
         """
         event, values = sg.Window('Select your \"GAME\"',
-                                  [[sg.Radio('black First', "RADIO1", default=True, size=(10, 1)),
+                                  [[sg.Text('Player1 name (white):'), sg.InputText()],
+                                   [sg.Text('Player2 name (black):'), sg.InputText()],
+                                   [sg.Radio('black First', "RADIO1", default=True, size=(10, 1)),
                                     sg.Radio('white First', "RADIO1")],
+                                   [sg.Radio('Swap2 start', "RADIO2", default=True, size=(10, 1)),
+                                    sg.Radio('Regular start', "RADIO2")],
                                    [sg.Text('table width: '), sg.Spin([i for i in range(4, 20)], initial_value=19)],
                                    [sg.Text('table height'), sg.Spin([i for i in range(4, 20)], initial_value=19)],
                                    [sg.Button("PvP"), sg.Button("easy"), sg.Button("medium"),
-                                    sg.Button("hard"), ]], margins=(40, 25)).read(
+                                    sg.Button("hard"), ]
+                                   ], margins=(40, 25)).read(
             close=True)
 
         if event in (sg.WIN_CLOSED, 'Exit'):
@@ -134,7 +166,7 @@ class FourInARow:
         if event == "hard":
             adversary_type = 3
 
-        if values[0]:
+        if values[2]:
             first_player = 1
         else:
             first_player = -1
@@ -143,11 +175,46 @@ class FourInARow:
         values_list = []
         for key, value in values.items():
             values_list.append(value)
-        if int(values_list[2]) in range(20) and int(values_list[2]) not in range(4):
-            if int(values_list[3]) in range(20) and int(values_list[3]) not in range(4):
-                return adversary_type, first_player, int(values_list[2]), int(values_list[3])
+        print(values_list)
+        if int(values_list[6]) in range(20) and int(values_list[6]) not in range(4):
+            if int(values_list[7]) in range(20) and int(values_list[7]) not in range(4):
+                return adversary_type, first_player, int(values_list[6]), int(values_list[7]), values[2], values_list[
+                                                                                                          0:2]
         sg.popup("Table width and height must be  3 < value < 20 ")
         return self.get_game_info()
+
+    def swap_moves(self, player, moves_left=3):
+        """
+            Processes the next click, which is owned by player
+            :param player: the player who clicks
+            :param moves_left how many pieces to place
+            :return: None
+        """
+        if moves_left == 0:
+            return None
+
+        event, values = self.window.read()
+        if event == 'New Game':
+            self.window.close()
+            a, b, c, d, e, f = self.get_game_info()
+            self.new_game(a, b, c, d, e, f)
+            return None
+        if event == 'Author':
+            sg.popup("Iacob Stefan\nStafie Stefan\nStefanica Catalin\n\nAI uaic.info.ro 2020")
+            self.next_click(player)
+            return None
+        if event == 'Exit':
+            self.window.close()
+            return None
+        if event in (sg.WIN_CLOSED, 'Exit'):
+            return None
+        if self.valid_move(event):
+            self.update_button(player, self.window[event])
+            self.update_matrix(player, event)
+            self.window.refresh()
+            self.swap_moves(player * -1, moves_left - 1)
+        else:
+            self.swap_moves(player, moves_left)
 
     def next_click(self, player):
         """
@@ -158,30 +225,30 @@ class FourInARow:
         if self.draw():
             sg.popup("'tis a draw.\nequal stength of mind")
             self.window.close()
-            a, b, c, d = self.get_game_info()
-            self.new_game(a, b, c, d)
+            a, b, c, d, e, f = self.get_game_info()
+            self.new_game(a, b, c, d, e, f)
 
         if self.ended(self.matrix):
             if self.adversary_type == 0:
                 if player == 1:
-                    sg.popup("black won")
-                else:
                     sg.popup("white won")
+                else:
+                    sg.popup("black won")
             else:
                 sg.popup("Computer won")
             self.window.close()
-            a, b, c, d = self.get_game_info()
-            self.new_game(a, b, c, d)
+            a, b, c, d, e, f = self.get_game_info()
+            self.new_game(a, b, c, d, e, f)
             return None
 
         event, values = self.window.read()
         if event == 'New Game':
             self.window.close()
-            a, b, c, d = self.get_game_info()
-            self.new_game(a, b, c, d)
+            a, b, c, d, e, f = self.get_game_info()
+            self.new_game(a, b, c, d, e, f)
             return None
         if event == 'Author':
-            sg.popup("Stafie Stefan\nPython uaic.info.ro 2020")
+            sg.popup("Iacob Stefan\nStafie Stefan\nStefanica Catalin\n\nAI uaic.info.ro 2020")
             self.next_click(player)
             return None
         if event == 'Exit':
@@ -194,19 +261,22 @@ class FourInARow:
             self.update_matrix(player, event)
             self.window.refresh()
             if self.adversary_type == 0:  # for human
+                self.player_to_put_piece = (self.player_to_put_piece + 1) % 2
+                self.window['the_current_player'].update(
+                    f"Player at turn: {self.player_names[self.player_to_put_piece]}")
                 self.next_click(player * -1)
+
             else:  # for machine
                 if self.ended(self.matrix):
                     sg.popup("Human won")
                     self.window.close()
-                    a, b, c, d = self.get_game_info()
-                    self.new_game(a, b, c, d)
+                    a, b, c, d, e, f = self.get_game_info()
+                    self.new_game(a, b, c, d, e, f)
 
                 dummy, computer_x, computer_y = self.minimax_with_alfabeta_pruning(self.matrix, 2, 1000000, player)
                 self.matrix[computer_y][computer_x] = 1
                 self.window[str(computer_y * self.x_cells + computer_x)].update(
                     image_data=button_image(self.size, self.size, "black", False))
-
                 self.next_click(-1)
         else:
             self.next_click(player)
@@ -403,7 +473,6 @@ class FourInARow:
         The function takes into consideration more information depending on the difficulty of the AI.
         :return: a score of the table. the score is >0 if the computer is in advantage. <=0 otherwise
         """
-        print(self.adversary_type)
         score = self.get_score(evaluated_matrix, 0) + self.get_score(evaluated_matrix, 1)
         if self.adversary_type > 1:
             score += self.get_score(evaluated_matrix, 2)
@@ -438,7 +507,8 @@ class FourInARow:
                 if self.ended(j[0]):
                     scores2.append(-10000)
                     break
-                scores2.append(0.9 * self.evaluate_state(self.minimax_with_alfabeta_pruning(j[0], levels - 1, beta, player)[0]))
+                scores2.append(
+                    0.9 * self.evaluate_state(self.minimax_with_alfabeta_pruning(j[0], levels - 1, beta, player)[0]))
                 if beta > scores2[-1]:  # find better minimum
                     beta = scores2[-1]
                 if alfa > beta:  # there is no reason to continue on this branch
@@ -462,5 +532,5 @@ class FourInARow:
 
 if __name__ == '__main__':
     the_game = FourInARow()
-    a, b, c, d = the_game.get_game_info()
-    the_game.new_game(a, b, c, d)
+    a, b, c, d, e, f = the_game.get_game_info()
+    the_game.new_game(a, b, c, d, e, f)
