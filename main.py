@@ -419,23 +419,23 @@ class FourInARow:
         for x in range(self.x_cells):
             for y in range(self.y_cells):
                 if evaluated_matrix[y][x] != 0:
-                    if x < self.x_cells - 3:
+                    if x < self.x_cells - 4:
                         if evaluated_matrix[y][x] == evaluated_matrix[y][x + 1] == evaluated_matrix[y][x + 2] == \
-                                evaluated_matrix[y][x + 3]:
+                                evaluated_matrix[y][x + 3] == evaluated_matrix[y][x + 4]:
                             return True
-                    if y < self.y_cells - 3:
+                    if y < self.y_cells - 4:
                         if evaluated_matrix[y][x] == evaluated_matrix[y + 1][x] == evaluated_matrix[y + 2][x] == \
-                                evaluated_matrix[y + 3][x]:
+                                evaluated_matrix[y + 3][x] == evaluated_matrix[y + 4][x]:
                             return True
-                    if x < self.x_cells - 3 and y < self.y_cells - 3:
+                    if x < self.x_cells - 4 and y < self.y_cells - 4:
                         if evaluated_matrix[y][x] == evaluated_matrix[y + 1][x + 1] == evaluated_matrix[y + 2][x + 2] == \
-                                evaluated_matrix[y + 3][x + 3]:
+                                evaluated_matrix[y + 3][x + 3] == evaluated_matrix[y + 4][x + 4]:
                             return True
-                if x < self.x_cells - 3 and y < self.y_cells - 3:
-                    if evaluated_matrix[y + 3][x] != 0:
-                        if evaluated_matrix[y + 3][x] == evaluated_matrix[y + 2][x + 1] == evaluated_matrix[y + 1][
-                            x + 2] == \
-                                evaluated_matrix[y][x + 3]:
+                if x < self.x_cells - 4 and y < self.y_cells - 4:
+                    if evaluated_matrix[y + 4][x] != 0:
+                        if evaluated_matrix[y + 4][x] == evaluated_matrix[y + 3][x + 1] == \
+                                evaluated_matrix[y + 2][x + 2] == evaluated_matrix[y + 1][x + 3] == \
+                                evaluated_matrix[y][x + 4]:
                             return True
         return False
 
