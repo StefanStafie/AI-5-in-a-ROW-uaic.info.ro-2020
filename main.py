@@ -85,9 +85,9 @@ class FourInARow:
 
     def update_button(self, player, button):
         """
-            changes the color of a single button
-            :param player - determines the color of the change
-            :param button - the button that needs changing
+        changes the color of a single button
+        :param player - determines the color of the change
+        :param button - the button that needs changing
         """
         if player == 1:
             color = "black"
@@ -99,13 +99,13 @@ class FourInARow:
     def new_game(self, adversary_type=1, first_player=1, x_cells=19, y_cells=19, is_swap2=False,
                  player_names=["john", "Lennon"]):
         """
-              initialises a new game with certain characteristics
-              :param adversary_type  takes 4 values. 0 for human (PvP game), (1, 2, 3) for (easy, medium, hard) difficulty
-              :param first_player  -1 if white plays first, 1 if black plays first. Computer is always black
-              :param x_cells number of horizontal cells
-              :param y_cells number of vertical cells
-              :param is_swap2 determines the start sequence of the game
-              :param player_names a list with length 2 representing the names of the players
+        initialises a new game with certain characteristics
+        :param adversary_type  takes 4 values. 0 for human (PvP game), (1, 2, 3) for (easy, medium, hard) difficulty
+        :param first_player  -1 if white plays first, 1 if black plays first. Computer is always black
+        :param x_cells number of horizontal cells
+        :param y_cells number of vertical cells
+        :param is_swap2 determines the start sequence of the game
+        :param player_names a list with length 2 representing the names of the players
         """
         print(first_player)
         self.x_cells = x_cells
@@ -121,7 +121,7 @@ class FourInARow:
 
         self.window = sg.Window('4inaROW', self.layout, element_padding=((0, 0), (0, 0)), margins=(0, 0))
         if is_swap2:
-            if adversary_type == 0:  # human 
+            if adversary_type == 0:  # human
                 self.swap_moves(first_player, 3)
                 event, values = sg.Window('Select your \"GAME\"',
                                           [[sg.Radio('keep color', "RADIO1", default=True, size=(10, 1))],
@@ -132,16 +132,25 @@ class FourInARow:
                 if values[1]:
                     self.player_names = self.player_names[::-1]
                 if values[2]:
-                    self.swap_moves(first_player, 2)
+                    self.player_to_put_piece = (self.player_to_put_piece + 1) % 2
+                    self.window['the_current_player'].update(
+                        f"Player at turn: {self.player_names[self.player_to_put_piece]}")
+                    self.swap_moves(first_player * -1, 2)
                     event, values = sg.Window('Select your \"GAME\"',
                                               [[sg.Radio('keep color', "RADIO1", default=True, size=(10, 1))],
                                                [sg.Radio('swap', "RADIO1")],
                                                [sg.OK()]], margins=(40, 25)).read(close=True)
                     if values[1]:
                         self.player_names = self.player_names[::-1]
+
+                self.player_to_put_piece = (self.player_to_put_piece + 1) % 2
+                self.window['the_current_player'].update(
+                    f"Player at turn: {self.player_names[self.player_to_put_piece]}")
                 self.next_click(first_player * -1)
             else:
                 self.next_click(-1)  # the game starts and the app awaits a click from player
+        else:
+            self.next_click(-1)
 
     def get_game_info(self):
         """
@@ -185,17 +194,17 @@ class FourInARow:
         print(values_list)
         if int(values_list[6]) in range(20) and int(values_list[6]) not in range(4):
             if int(values_list[7]) in range(20) and int(values_list[7]) not in range(4):
-                return adversary_type, first_player, int(values_list[6]), int(values_list[7]), values[2], values_list[
+                return adversary_type, first_player, int(values_list[6]), int(values_list[7]), values[4], values_list[
                                                                                                           0:2]
         sg.popup("Table width and height must be  3 < value < 20 ")
         return self.get_game_info()
 
     def swap_moves(self, player, moves_left=3):
         """
-            Processes the next click, which is owned by player
-            :param player: the player who clicks
-            :param moves_left how many pieces to place
-            :return: None
+        Processes the next click, which is owned by player
+        :param player: the player who clicks
+        :param moves_left how many pieces to place
+        :return: None
         """
         if moves_left == 0:
             return None
