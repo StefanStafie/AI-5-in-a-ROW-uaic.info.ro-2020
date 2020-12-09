@@ -42,7 +42,7 @@ class FourInARow:
         """
         Numerical representation, as a matrix (list of lists)
         """
-        self.matrix = np.zeros((self.x_cells, self.y_cells))
+        self.matrix = np.zeros((self.y_cells, self.x_cells))
         if self.adversary_type != 0 and self.first_player == 1:
             self.matrix[int(self.y_cells / 2) - 1][int(self.x_cells / 2)] = 1
         return None
@@ -116,7 +116,7 @@ class FourInARow:
         self.is_swap2 = is_swap2
         self.player_names = player_names
         if adversary_type != 0:
-            self.player_names[1] = "computer"
+            self.player_names[1] = "computer. Loading move"
         self.init_table()
         self.init_graphics()
 
@@ -202,7 +202,6 @@ class FourInARow:
                         self.window['the_current_player'].update(
                             f"Player at turn: {self.player_names[self.player_to_put_piece]}")
                         self.swap_moves(first_player, 2)
-                        self.player_to_put_piece = (self.player_to_put_piece + 1) % 2
 
                         keep_color = self.minimax_with_alfabeta_pruning(self.matrix, 2, 100000, 1)
                         swap = self.minimax_with_alfabeta_pruning(self.matrix, 2, 100000, -1)
@@ -215,6 +214,7 @@ class FourInARow:
                         else:
                             print("swap")
                             self.next_click(1)
+                            self.player_names = self.player_names[::-1]
 
                     self.player_to_put_piece = (self.player_to_put_piece + 1) % 2
                     self.window['the_current_player'].update(
@@ -363,7 +363,7 @@ class FourInARow:
                 self.player_to_put_piece = (self.player_to_put_piece + 1) % 2
                 self.window['the_current_player'].update(
                     f"Player at turn: {self.player_names[self.player_to_put_piece]}")
-                self.window['the_current_player'].update("Player at turn: computer")
+                self.window['the_current_player'].update("Player at turn: computer. Loading move")
                 self.window.refresh()
                 dummy, computer_x, computer_y = self.minimax_with_alfabeta_pruning(self.matrix, 2, 1000000, player * -1)
                 self.matrix[computer_y][computer_x] = player * -1
@@ -473,6 +473,9 @@ class FourInARow:
         :return: None
         """
         generated_matrix = []
+        chain4 = []
+        chain3 = []
+        chain2 = []
         for axis in range(4):
             if axis == 0:
                 x_mod = 1
@@ -498,25 +501,51 @@ class FourInARow:
             for y in range(self.y_cells):
                 for x in range(self.x_cells):
                     if abs(aux[y][x]) >= 10:
-                        # the place at the end of a chain (2 or 3 piece)
-                        if self.y_cells > y + y_mod > 0 < x + x_mod < self.x_cells and \
-                                aux[y + y_mod][x + x_mod] == 0:
-                            to_add = [[item for item in line] for line in evaluated_matrix]
-                            to_add[y + y_mod][x + x_mod] = player
-                            generated_matrix.append([to_add, x + x_mod, y + y_mod])
-                        # the place at the start of a 2 piece chain
-                        if self.y_cells > y - 2 * y_mod > 0 < x - 2 * x_mod < self.x_cells and \
-                                aux[y - 2 * y_mod][x - 2 * x_mod] == 0:
-                            to_add = [[item for item in line] for line in evaluated_matrix]
-                            to_add[y - 2 * y_mod][x - 2 * x_mod] = player
-                            generated_matrix.append([to_add, x - 2 * x_mod, y - 2 * y_mod])
-                        # the place at the start of a 3 piece chain
-                        if abs(aux[y][x]) >= 100:
-                            if self.y_cells > y - 3 * y_mod > 0 < x - 3 * x_mod < self.x_cells and \
-                                    aux[y - 3 * y_mod][x - 3 * x_mod] == 0:
+                        # the place at the end of a chain
+                        if abs(aux[y][x]) >= 1000:
+                            if self.y_cells > y + y_mod > 0 < x + x_mod < self.x_cells and \
+                                    aux[y + y_mod][x + x_mod] == 0:
                                 to_add = [[item for item in line] for line in evaluated_matrix]
-                                to_add[y - 3 * y_mod][x - 3 * x_mod] = player
-                                generated_matrix.append([to_add, x - 3 * x_mod, y - 3 * y_mod])
+                                to_add[y + y_mod][x + x_mod] = player
+                                chain4.append([to_add, x + x_mod, y + y_mod])
+                            # the place at the start of a 4 piece chain
+                            if self.y_cells > y - 4 * y_mod > 0 < x - 4 * x_mod < self.x_cells and \
+                                    aux[y - 4 * y_mod][x - 4 * x_mod] == 0:
+                                to_add = [[item for item in line] for line in evaluated_matrix]
+                                to_add[y - 4 * y_mod][x - 4 * x_mod] = player
+                                chain4.append([to_add, x - 4 * x_mod, y - 4 * y_mod])
+                        else:
+                            if abs(aux[y][x]) >= 100:
+                                if self.y_cells > y + y_mod > 0 < x + x_mod < self.x_cells and \
+                                        aux[y + y_mod][x + x_mod] == 0:
+                                    to_add = [[item for item in line] for line in evaluated_matrix]
+                                    to_add[y + y_mod][x + x_mod] = player
+                                    chain3.append([to_add, x + x_mod, y + y_mod])
+                                # the place at the start of a 3 piece chain
+                                if self.y_cells > y - 3 * y_mod > 0 < x - 3 * x_mod < self.x_cells and \
+                                        aux[y - 3 * y_mod][x - 3 * x_mod] == 0:
+                                    to_add = [[item for item in line] for line in evaluated_matrix]
+                                    to_add[y - 3 * y_mod][x - 3 * x_mod] = player
+                                    chain3.append([to_add, x - 3 * x_mod, y - 3 * y_mod])
+                            else:
+                                if self.y_cells > y + y_mod > 0 < x + x_mod < self.x_cells and \
+                                        aux[y + y_mod][x + x_mod] == 0:
+                                    to_add = [[item for item in line] for line in evaluated_matrix]
+                                    to_add[y + y_mod][x + x_mod] = player
+                                    chain2.append([to_add, x + x_mod, y + y_mod])
+                                # the place at the start of a 2 piece chain
+                                if self.y_cells > y - 2 * y_mod > 0 < x - 2 * x_mod < self.x_cells and \
+                                        aux[y - 2 * y_mod][x - 2 * x_mod] == 0:
+                                    to_add = [[item for item in line] for line in evaluated_matrix]
+                                    to_add[y - 2 * y_mod][x - 2 * x_mod] = player
+                                    chain2.append([to_add, x - 2 * x_mod, y - 2 * y_mod])
+
+        for x in chain4:
+            generated_matrix.append(x)
+        for x in chain3:
+            generated_matrix.append(x)
+        for x in chain2:
+            generated_matrix.append(x)
 
         if len(generated_matrix) == 0:
             for y in range(self.y_cells):
@@ -535,6 +564,7 @@ class FourInARow:
                             aux[y][x] = player
                             generated_matrix.append([aux, x, y])
                             break
+
         return generated_matrix
 
     def get_score(self, evaluated_matrix, axis):
