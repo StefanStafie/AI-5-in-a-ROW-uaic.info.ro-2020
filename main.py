@@ -2,7 +2,7 @@ import PySimpleGUI as sg
 import numpy as np
 from io import BytesIO
 from PIL import Image, ImageDraw
-
+import time
 
 def button_image(width, height, color='black', square=True):
     """
@@ -54,6 +54,7 @@ class FourInARow:
         """
         menu_def = [['File', ['New Game', 'Exit', ]],
                     ['About', ['Author', ], ],
+                    ['Suggest', ['numerical', 'visual'], ],
                     ]
         init_layout = [[sg.Menu(menu_def)]]
 
@@ -329,6 +330,12 @@ class FourInARow:
             return None
 
         event, values = self.window.read()
+        if event == 'numerical':
+            self.suggest_move(player)
+            self.next_click(player)
+        if event == 'visual':
+            self.suggest_move_visual(player)
+            self.next_click(player)
         if event == 'New Game':
             self.window.close()
             a, b, c, d, e, f = self.get_game_info()
@@ -659,6 +666,38 @@ class FourInARow:
             return self.matrix, 0, 0
         return moves1[maximum]
 
+    def suggest_move(self, player):
+        suggested, sx, sy = self.minimax_with_alfabeta_pruning(self.matrix, 2, 10000, player)
+        sg.popup(f"Row: {sy}\n Column: {sx}")
+
+    def suggest_move_visual(self, player):
+        self.window.read(timeout=1)
+        self.window['the_current_player'].update("loading move")
+        self.window.refresh()
+        suggested, sx, sy = self.minimax_with_alfabeta_pruning(self.matrix, 2, 10000, player)
+        self.window['the_current_player'].update("displaying move")
+        self.window[str(sy * self.x_cells + sx)].update(image_data=button_image(self.size, self.size, "orange", False))
+        self.window.refresh()
+        time.sleep(0.2)
+        self.window[str(sy * self.x_cells + sx)].update(image_data=button_image(self.size, self.size, "green", False))
+        self.window.refresh()
+        time.sleep(0.2)
+        self.window[str(sy * self.x_cells + sx)].update(image_data=button_image(self.size, self.size, "orange", False))
+        self.window.refresh()
+        time.sleep(0.2)
+        self.window[str(sy * self.x_cells + sx)].update(image_data=button_image(self.size, self.size, "green", False))
+        self.window.refresh()
+        time.sleep(0.2)
+        self.window[str(sy * self.x_cells + sx)].update(image_data=button_image(self.size, self.size, "orange", False))
+        self.window.refresh()
+        time.sleep(0.2)
+        self.window[str(sy * self.x_cells + sx)].update(image_data=button_image(self.size, self.size, "green", False))
+        self.window.refresh()
+        time.sleep(0.2)
+        self.window[str(sy * self.x_cells + sx)].update(image_data=button_image(self.size, self.size, "gray", True))
+        self.window.refresh()
+        self.window['the_current_player'].update(
+            f"Player at turn: {self.player_names[self.player_to_put_piece]}")
 
 if __name__ == '__main__':
     the_game = FourInARow()
